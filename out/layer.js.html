@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layer.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layer.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
+ * @Author: wangchaoxu
+ * @Date: 2020-07-16 16:47:59
+ * @LastEditors: wangchaoxu
+ * @LastEditTime: 2020-09-30 17:46:38
+ * @Description:
+ */
+//需要安装@dvgis/cesium-map,然后在mian.js中引入 import('@dvgis/cesium-map/build/cesium-map/cesium-map.min');
+import { config } from './config';
+import { for2 } from './core';
+/**
+ * @description: 添加图层
+ * @param {type}
+ * @return:
+ * @author: wangchaoxu
+ */
+function addLayer(viewer) {
+	removeAllLayer(viewer);
+	let imgLayer = {
+		style: 'img',
+		name: '图层',
+		key: config.TIANDITU_KAY,
+	};
+	viewer.imageryLayers.addImageryProvider(new Cesium.TdtImageryProvider(imgLayer));
+	let ciaLayer = {
+		style: 'cia',
+		key: config.TIANDITU_KAY,
+	};
+	viewer.imageryLayers.addImageryProvider(new Cesium.TdtImageryProvider(ciaLayer));
+	let iboLayer = {
+		style: 'ibo',
+		key: config.TIANDITU_KAY,
+	};
+	viewer.imageryLayers.addImageryProvider(new Cesium.TdtImageryProvider(iboLayer));
+}
+
+/**
+ * 添加图层
+ * @param {Object } viewer
+ * @param {String } 图片 base||imgURl
+ * @param {Object } boundary 最大最小经纬度范围
+ * @param {Number } alpha    透明度
+ * @param {Number } tier     层级
+ * @return:
+ * @author: wangchaoxu
+ */
+
+function addImageryProvider(viewer, img, boundary, alpha, tier, name = '色斑图', type = '图片') {
+	let coordinates = Cesium.Rectangle.fromDegrees(boundary.minlng, boundary.minlat, boundary.maxlng, boundary.maxlat);
+	let imageryProvider = new Cesium.SingleTileImageryProvider({
+		url: img,
+		rectangle: coordinates, //Cesium.Rectangle.fromDegrees(datejson[i].Xmin, datejson[i].Ymin, datejson[i].Xmax, datejson[i].Ymax);
+		baseLayerPicker: false,
+	});
+	// 层级
+	let layer = viewer.imageryLayers.addImageryProvider(imageryProvider, tier);
+	layer.alpha = alpha;
+	layer.name = name;
+	layer.type = type;
+}
+
+/**
+ * @description: 获取所有图层
+ * @param {Object}  viewer对象
+ * @return: {Array} 图层集合
+ * @author: wangchaoxu
+ */
+function getAllLayer(viewer) {
+	return viewer.imageryLayers._layers;
+}
+/**
+ * @description: 根据属性获取图层
+ * @param {Object}  viewer对象
+ * @param {String}  attr 参照属性
+ * @param {String}  vval 参照属性值
+ * @return:{Array}  符合属性的图层
+ * @author: wangchaoxu
+ */
+function getLayerByAttr(viewer, attr, val) {
+	const layers = getAllLayer(viewer);
+	return layers.filter((item) => item[attr] == val);
+}
+
+/**
+ * @description: 删除所有图层
+ * @param {type}
+ * @return:
+ * @author: wangchaoxu
+ */
+function removeAllLayer(viewer) {
+	viewer.imageryLayers.removeAll();
+}
+/**
+ * @description:根据属性删除图层
+ * @param {type}
+ * @return:
+ * @author: wangchaoxu
+ */
+function removeLayerByAttr(viewer, attr, val) {
+	const layers = getAllLayer(viewer);
+	for2(layers, (item) => {
+		if (item[attr] === val) viewer.imageryLayers.remove(item);
+	});
+}
+
+export { addLayer, addImageryProvider, getAllLayer, getLayerByAttr, removeAllLayer, removeLayerByAttr };
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Popup.html">Popup</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addBillboard">addBillboard</a></li><li><a href="global.html#addCircle">addCircle</a></li><li><a href="global.html#addImageryProvider">addImageryProvider</a></li><li><a href="global.html#addLabel">addLabel</a></li><li><a href="global.html#addLayer">addLayer</a></li><li><a href="global.html#addMarker">addMarker</a></li><li><a href="global.html#addSkyBox">addSkyBox</a></li><li><a href="global.html#addTerrain">addTerrain</a></li><li><a href="global.html#calculateCenter">calculateCenter</a></li><li><a href="global.html#cloneDeep">cloneDeep</a></li><li><a href="global.html#drawCard">drawCard</a></li><li><a href="global.html#drawGrid">drawGrid</a></li><li><a href="global.html#flyTo">flyTo</a></li><li><a href="global.html#for2">for2</a></li><li><a href="global.html#getAllEntities">getAllEntities</a></li><li><a href="global.html#getAllLayer">getAllLayer</a></li><li><a href="global.html#getEntitiesByAttr">getEntitiesByAttr</a></li><li><a href="global.html#getLayerByAttr">getLayerByAttr</a></li><li><a href="global.html#infoWindow">infoWindow</a></li><li><a href="global.html#infoWindowClose">infoWindowClose</a></li><li><a href="global.html#leftSingleClick">leftSingleClick</a></li><li><a href="global.html#moveGetInfo">moveGetInfo</a></li><li><a href="global.html#moveShowInfo">moveShowInfo</a></li><li><a href="global.html#removeAllEntities">removeAllEntities</a></li><li><a href="global.html#removeAllLayer">removeAllLayer</a></li><li><a href="global.html#removeEntitiesByAttr">removeEntitiesByAttr</a></li><li><a href="global.html#removeHandle">removeHandle</a></li><li><a href="global.html#removeLayerByAttr">removeLayerByAttr</a></li><li><a href="global.html#removePrimitives">removePrimitives</a></li><li><a href="global.html#removeTerrain">removeTerrain</a></li><li><a href="global.html#setColor">setColor</a></li><li><a href="global.html#skyBoxIsShow">skyBoxIsShow</a></li><li><a href="global.html#type">type</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.2</a> on Wed Sep 30 2020 17:53:47 GMT+0800 (中国标准时间)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

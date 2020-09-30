@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: other.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: other.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
+ * @Author: wangchaoxu
+ * @Date: 2020-07-20 19:13:02
+ * @LastEditors: wangchaoxu
+ * @LastEditTime: 2020-09-30 17:42:25
+ * @Description: cesium的扩展功能
+ */
+// import CesiumNavigation from 'cesium-navigation-es6';
+import { isFunction } from './core';
+import { mouseMove } from './mouse';
+import Coordinate from './coordinate';
+function addNav(viewer) {
+	// var options = {
+	//   // 用于在使用重置导航重置地图视图时设置默认视图控制。接受的值是Cesium.Cartographic 和 Cesium.Rectangle.
+	//   defaultResetView: new Cesium.Rectangle.fromDegrees(111.339523, 33.231447, 112.838902, 35.100877),
+	//   // 用于启用或禁用罗盘。true是启用罗盘，false是禁用罗盘。默认值为true。如果将选项设置为false，则罗盘将不会添加到地图中。
+	//   enableCompass: true,
+	//   // 用于启用或禁用缩放控件。true是启用，false是禁用。默认值为true。如果将选项设置为false，则缩放控件将不会添加到地图中。
+	//   enableZoomControls: true,
+	//   // 用于启用或禁用距离图例。true是启用，false是禁用。默认值为true。如果将选项设置为false，距离图例将不会添加到地图中。
+	//   enableDistanceLegend: true,
+	//   // 用于启用或禁用指南针外环。true是启用，false是禁用。默认值为true。如果将选项设置为false，则该环将可见但无效。
+	//   enableCompassOuterRing: true
+	// };
+	// CesiumNavigation(viewer, options);
+}
+/**
+ * @description: 移动获取信息
+ * @param {type}
+ * @return:
+ * @author: wangchaoxu
+ */
+function moveGetInfo(viewer, callback) {
+	let handle = mouseMove(viewer, function(cartographic) {
+		let cityLng = Cesium.Math.toDegrees(cartographic.longitude);
+		let cityLat = Cesium.Math.toDegrees(cartographic.latitude);
+		let height = Math.ceil(viewer.camera.positionCartographic.height / 1000);
+		if (isFunction(callback)) {
+			callback(cityLng, cityLat, height);
+		}
+	});
+	return handle;
+}
+
+/**
+ * @description:信息窗口
+ * @param {type}
+ * @return:
+ * @author: wangchaoxu
+ */
+function infoWindow(viewer, config) {
+	var scratch = new Cesium.Cartesian2();
+	let event = viewer.scene.preRender.addEventListener(() => {
+		var position = Cesium.Cartesian3.fromDegrees(config.lng, config.lat, config.alt || 0);
+		var canvasPosition = viewer.scene.cartesianToCanvasCoordinates(position, scratch);
+		if (Cesium.defined(canvasPosition)) {
+			// htmlOverlay.style.top = canvasPosition.y - 250 + 'px';
+			// htmlOverlay.style.left = canvasPosition.x - 220 + 'px';
+			config.htmlOverlay.style.left = canvasPosition.x + config.pixelOffset[0] + 'px';
+			config.htmlOverlay.style.top = canvasPosition.y + config.pixelOffset[1] + 'px';
+		}
+	});
+	return event;
+}
+/**
+ * @description: 接触infowindow的事件监听
+ * @param {Function }  infoWindow 返回值
+ * @author: wangchaoxu
+ */
+function infoWindowClose(viewer, event) {
+	viewer.scene.preRender.removeEventListener(event);
+}
+
+/*
+ * drawCanvas  把二进制数据转为图像数据
+ * @param {Array} griddata 二进制数据
+ * @param {Object}boundary 区域的最大最小经纬度值,以及区域的边界线数据
+ * @param {Object}boundary 区域的边界线数据
+ * @param {Array} CValues和颜色对应的值
+ * @param {Array} Colors 和值对应的颜色
+ **/
+function drawCanvas(griddata, boundary, Colors, CValues, mapdata) {
+	var Icanvas = document.createElement('canvas');
+	var c = Icanvas.getContext('2d');
+	if (griddata) {
+		var WI = griddata.length; //第一组树的长度
+		var HI = griddata[0].length; //二维数组的长度
+		var cd2 = new Coordinate({
+			Width: WI,
+			Height: HI,
+			minX: boundary.minlng,
+			maxX: boundary.maxlng,
+			minY: boundary.minlat,
+			maxY: boundary.maxlat,
+		});
+		Icanvas.width = WI;
+		Icanvas.height = HI;
+		var data = c.createImageData(WI, HI);
+		var len = CValues.length;
+		for (var x = 0; x &lt; WI; x++) {
+			for (var y = 0; y &lt; HI; y++) {
+				var cc = new Object();
+				cc.R = 255;
+				cc.G = 255;
+				cc.B = 255;
+				// 这几步可以不使用,因为一般-99都不会在边界线内,生成数据的时候已经处理过了,我们只需要过滤-99的数据就行了
+				var lngLat = cd2.ToCoordinate(x, y); //像素转坐标
+				var inBoundary = cd2.Contains(mapdata, {
+					//判断是否在范围内
+					X: lngLat.pX,
+					Y: lngLat.pY,
+				});
+				if (inBoundary) {
+					let dd = griddata[x][y];
+					if (dd != -99) {
+						for (var j = 0; j &lt; len - 1; j++) {
+							try {
+								if (dd &lt; CValues[0]) {
+									cc = Colors[0];
+									break;
+								} else if (dd > CValues[len - 1]) {
+									cc = Colors[len - 1];
+									break;
+								} else if (dd > CValues[j] &amp;&amp; dd &lt;= CValues[j + 1]) {
+									cc = Colors[j + 1];
+									break;
+								}
+							} catch (es) {
+								console.log(es);
+							}
+						}
+						var index = (y * WI + x) * 4; //calculate index
+						data.data[index] = cc.R; // red
+						data.data[index + 1] = cc.G; // green
+						data.data[index + 2] = cc.B; // blue
+						// 无值得时候白色
+						// if (cc.R == 0 &amp;&amp; cc.G == 0 &amp;&amp; cc.B == 0) {
+						//无值得时候透明
+						if (cc.R == 255 &amp;&amp; cc.G == 255 &amp;&amp; cc.B == 255) {
+							data.data[index + 3] = 0;
+						} else {
+							data.data[index + 3] = 255;
+						}
+					}
+				}
+			}
+		}
+		c.putImageData(data, 0, 0); //将图像数据放到画布上
+		return Icanvas.toDataURL();
+	} else {
+		alert('暂无预报数据');
+	}
+}
+/**
+ * @description: 绘制色标卡
+ * @param {Array} CValues 和颜色对应的值
+ * @param {Array} Colors  和值对应的颜色
+ * @param {Number}  clen    色标的长度
+ * @return:
+ * @author: wangchaoxu
+ */
+function drawCard(CValues, Colors, clen) {
+	var canvas_c = document.createElement('canvas');
+	var ctx_c = canvas_c.getContext('2d');
+	var ls = 25;
+	canvas_c.height = clen * 25;
+	canvas_c.width = 80;
+	var min = parseInt(CValues[0]);
+	var max = parseInt(CValues[CValues.length - 1]);
+	var minmax = (max - min) / (clen - 1);
+	var mm;
+	for (var l = 0; l &lt; clen - 1; l++) {
+		ctx_c.fillStyle = '#fff';
+		ctx_c.fillText(parseFloat(min).toFixed(1), 45, l * ls + 15); //文本
+		var s = 0;
+		for (var i = l * ls; i &lt;= l * ls + ls; i++) {
+			try {
+				ctx_c.fillStyle = 'rgb(' + Colors[i].R + ',' + Colors[i].G + ',' + Colors[i].B + ')';
+				ctx_c.fillRect(2, i, 35, 1);
+				mm = min + (s / ls) * minmax;
+				s++;
+			} catch (e) {
+				// console.log(l, i, Colors[i]);
+				// debugger;
+				console.log(e);
+			}
+		}
+		min = mm;
+		ctx_c.fillStyle = 'rgb(255,255,255)';
+		ctx_c.fillRect(2, l * ls, 35, 1);
+	}
+	return canvas_c.toDataURL('image/png');
+}
+/**
+ * @description: 鼠标移动事件显示色板图上的差值
+ * @param {String}  name
+ * @return:
+ * @author: wangchaoxu
+ */
+function moveShowInfo(griddata, boundary, mapdata, unit, viewer = global.viewer) {
+	let entity, mouseMoveEvent;
+	entity = viewer.entities.add({
+		name: '游标',
+		label: {
+			font: '40px Helvetica',
+			show: true,
+			scale: 0.5,
+			backgroundColor: Cesium.Color.WHITE,
+			fillColor: Cesium.Color.BLACK,
+			pixelOffset: new Cesium.Cartesian2(10, -15), //偏移量
+			LabelStyle: Cesium.LabelStyle.FILL_AND_OUTLINE,
+			showBackground: true,
+		},
+	});
+	var WI = griddata.length; //第一组树的长度
+	var HI = griddata[0].length; //二维数组的长度
+	var CoorBounds2 = new Coordinate({
+		Width: WI,
+		Height: HI,
+		minX: boundary.minlng,
+		maxX: boundary.maxlng,
+		minY: boundary.minlat,
+		maxY: boundary.maxlat,
+	});
+	mouseMoveEvent = moveGetInfo(viewer, function(lng, lat, height) {
+		var inBoundary = CoorBounds2.Contains(mapdata, {
+			//坐标转屏幕像素
+			X: lng,
+			Y: lat,
+		});
+		if (inBoundary) {
+			//如果这个点在范围内部
+			var xy = CoorBounds2.ToScreen(lng, lat);
+			var dd = griddata[parseInt(xy.pX)][parseInt(xy.pY)];
+			if (parseFloat(dd) !== -99 &amp;&amp; dd) {
+				entity.label.text = dd.toFixed(2) + unit;
+				// console.log(dd.toFixed(2));
+			} else {
+				entity.label.text = '0' + unit;
+			}
+			entity.position = Cesium.Cartesian3.fromDegrees(lng, lat, height);
+			entity.label.show = true;
+		} else {
+			entity.label.show = false;
+		}
+	});
+	return mouseMoveEvent;
+}
+
+/**
+ * 绘制网格
+ * @param {String } color 颜色值,16进制||rgb||字符串
+ * @param {Number } step  格子间距,也叫格子宽高
+ * @param {Array }  data  二维数组,数据的长度,影响格子的个数,值为格子内部显示值
+ * @return: base64  返回base64数据
+ * @author: wangchaoxu
+ */
+function drawGrid(color, step, data, boundary, mapdata) {
+	var canvas = document.createElement('canvas');
+	var context = canvas.getContext('2d');
+	var width = (canvas.width = data.length * step);
+	var height = (canvas.height = data[0].length * step);
+	var num = 0;
+	var cd2 = new Coordinate({
+		Width: data.length,
+		Height: data[0].length,
+		minX: boundary.minlng,
+		maxX: boundary.maxlng,
+		minY: boundary.minlat,
+		maxY: boundary.maxlat,
+	});
+	context.save();
+	context.fillStyle = 'rgba(0,0,0,0)';
+	context.fillRect(0, 0, width, height);
+	context.lineWidth = 0.5;
+	context.strokeStyle = color;
+	context.font = 'bold 13px Arial'; //画笔样式
+	for (let i = step; i &lt; width; i += step) {
+		context.beginPath();
+		context.moveTo(i, 0);
+		context.lineTo(i, height);
+		context.closePath();
+		context.stroke();
+		// ============
+	}
+	for (let i = step; i &lt; height; i += step) {
+		context.beginPath();
+		context.moveTo(0, i);
+		context.lineTo(width, i);
+		context.closePath();
+		context.stroke();
+	}
+	let len = data.length;
+	let len2 = data[0].length;
+	for (let k = 0; k &lt; len; k++) {
+		for (let n = 0; n &lt; len2; n++) {
+			var lngLat = cd2.ToCoordinate(k, n); //像素转坐标
+			var inBoundary = cd2.Contains(mapdata, {
+				//判断是否在范围内
+				X: lngLat.pX,
+				Y: lngLat.pY,
+			});
+			if (inBoundary) {
+				context.fillStyle = 'red';
+				context.fillText(Math.round(Number(data[k][n]) * 100) / 100, k * step + step / 4, n * step + step / 1.5);
+			}
+		}
+	}
+	context.restore();
+	var base64Img = canvas.toDataURL('image/jpg');
+	return base64Img;
+}
+
+/**
+ * 添加地形
+ *@param {Steing} url 地形文件的链接或者位置
+ */
+function addTerrain(viewer, url) {
+	var terrainLayer = new Cesium.CesiumTerrainProvider({
+		url: url,
+		requestWaterMask: true, //显示水数据
+		terrainExaggeration: 5, //地形夸大
+	});
+	viewer.terrainProvider = terrainLayer;
+	viewer.scene.globe.depthTestAgainstTerrain = true; //是否开启地形检测
+	viewer.scene.globe.enableLighting = true; //是否开启光照效果
+}
+/** 去除地形
+ */
+function removeTerrain(viewer) {
+	viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+	viewer.scene.globe.depthTestAgainstTerrain = false; //是否开启地形检测
+}
+
+/**
+ * @description:   求任意多边形的中心点
+ * @param {Array}  lnglatarr多边形经纬度组成的数组
+ * @return {Object} {lng:'',lat:''}
+ * @author: wangchaoxu
+ * @examples
+ *   var list = [
+ *     { lon: 111.4946534545363, lat: 34.30584789255181, hei: -0.009223141260533467 },
+ *     { lon: 111.51023102690276, lat: 34.29761412265642, hei: -0.010000457824493363 },
+ *     { lon: 111.50314393374828, lat: 34.290268671894424, hei: -0.008209045397377747 },
+ *      { lon: 111.4918165024887, lat: 34.29761887959044, hei: -0.009645919514881408 }
+ *   ]
+ *   calculateCenter (list)
+ */
+var calculateCenter = function(lnglatarr) {
+	var total = lnglatarr.length;
+	var X = 0,
+		Y = 0,
+		Z = 0;
+	lnglatarr.forEach(function(lnglat) {
+		var lng = (lnglat.lon * Math.PI) / 180;
+		var lat = (lnglat.lat * Math.PI) / 180;
+		var x, y, z;
+		x = Math.cos(lat) * Math.cos(lng);
+		y = Math.cos(lat) * Math.sin(lng);
+		z = Math.sin(lat);
+		X += x;
+		Y += y;
+		Z += z;
+	});
+	X = X / total;
+	Y = Y / total;
+	Z = Z / total;
+
+	var Lng = Math.atan2(Y, X);
+	var Hyp = Math.sqrt(X * X + Y * Y);
+	var Lat = Math.atan2(Z, Hyp);
+	console.log(Lng, Lat, Hyp);
+	return { lng: (Lng * 180) / Math.PI, lat: (Lat * 180) / Math.PI };
+};
+
+export { addNav, moveGetInfo, infoWindow, infoWindowClose, drawCanvas, drawCard, moveShowInfo, addTerrain, removeTerrain, drawGrid, calculateCenter };
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Popup.html">Popup</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addBillboard">addBillboard</a></li><li><a href="global.html#addCircle">addCircle</a></li><li><a href="global.html#addImageryProvider">addImageryProvider</a></li><li><a href="global.html#addLabel">addLabel</a></li><li><a href="global.html#addLayer">addLayer</a></li><li><a href="global.html#addMarker">addMarker</a></li><li><a href="global.html#addSkyBox">addSkyBox</a></li><li><a href="global.html#addTerrain">addTerrain</a></li><li><a href="global.html#calculateCenter">calculateCenter</a></li><li><a href="global.html#cloneDeep">cloneDeep</a></li><li><a href="global.html#drawCard">drawCard</a></li><li><a href="global.html#drawGrid">drawGrid</a></li><li><a href="global.html#flyTo">flyTo</a></li><li><a href="global.html#for2">for2</a></li><li><a href="global.html#getAllEntities">getAllEntities</a></li><li><a href="global.html#getAllLayer">getAllLayer</a></li><li><a href="global.html#getEntitiesByAttr">getEntitiesByAttr</a></li><li><a href="global.html#getLayerByAttr">getLayerByAttr</a></li><li><a href="global.html#infoWindow">infoWindow</a></li><li><a href="global.html#infoWindowClose">infoWindowClose</a></li><li><a href="global.html#leftSingleClick">leftSingleClick</a></li><li><a href="global.html#moveGetInfo">moveGetInfo</a></li><li><a href="global.html#moveShowInfo">moveShowInfo</a></li><li><a href="global.html#removeAllEntities">removeAllEntities</a></li><li><a href="global.html#removeAllLayer">removeAllLayer</a></li><li><a href="global.html#removeEntitiesByAttr">removeEntitiesByAttr</a></li><li><a href="global.html#removeHandle">removeHandle</a></li><li><a href="global.html#removeLayerByAttr">removeLayerByAttr</a></li><li><a href="global.html#removePrimitives">removePrimitives</a></li><li><a href="global.html#removeTerrain">removeTerrain</a></li><li><a href="global.html#setColor">setColor</a></li><li><a href="global.html#skyBoxIsShow">skyBoxIsShow</a></li><li><a href="global.html#type">type</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.2</a> on Wed Sep 30 2020 17:53:47 GMT+0800 (中国标准时间)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
