@@ -1,9 +1,9 @@
 /*
- * @Author: wangchaoxu
+ * @Author: zulezhe
  * @Date: 2020-07-20 18:45:45
- * @LastEditors: wangchaoxu
+ * @LastEditors: zulezhe
  * @LastEditTime: 2020-07-29 19:43:36
- * @Description:坐标的转换
+ * 坐标的转换
  */
 
 function Coordinate(options) {
@@ -13,7 +13,7 @@ function Coordinate(options) {
     minX: 0,
     maxX: 0,
     minY: 0,
-    maxY: 0
+    maxY: 0,
   };
 
   var _Width = 0.0;
@@ -66,15 +66,12 @@ Coordinate.prototype = {
     //判断是否在范围内
     var result = false;
     for (var i = 0; i < points.length - 1; i++) {
-      if (
-        ((points[i + 1].Y <= p.Y && p.Y < points[i].Y) || (points[i].Y <= p.Y && p.Y < points[i + 1].Y)) &&
-        p.X < ((points[i].X - points[i + 1].X) * (p.Y - points[i + 1].Y)) / (points[i].Y - points[i + 1].Y) + points[i + 1].X
-      ) {
+      if (((points[i + 1].Y <= p.Y && p.Y < points[i].Y) || (points[i].Y <= p.Y && p.Y < points[i + 1].Y)) && p.X < ((points[i].X - points[i + 1].X) * (p.Y - points[i + 1].Y)) / (points[i].Y - points[i + 1].Y) + points[i + 1].X) {
         result = !result;
       }
     }
     return result;
-  }
+  },
 };
 
 export default Coordinate;

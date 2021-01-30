@@ -1,16 +1,16 @@
 /*
- * @Author: wangchaoxu
+ * @Author: zulezhe
  * @Date: 2020-07-20 17:46:37
- * @LastEditors: wangchaoxu
+ * @LastEditors: zulezhe
  * @LastEditTime: 2020-08-07 11:41:05
- * @Description:鼠标事件
+ * 鼠标事件
  */
-import { isFunction } from './core.js';
+import { isFunction } from "./core.js";
 /**
- * @description: 左键点击获取实体对象
+ *  左键点击获取实体对象
  * @param {type}
  * @return:
- * @author: wangchaoxu
+ * @author: zulezhe
  */
 function leftSingleClick(viewer, callback) {
   var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -46,11 +46,11 @@ function mouseMove(viewer, callback) {
   return handler;
 }
 /**
- * @description: 清楚鼠标事件
+ *  清楚鼠标事件
  * @param {object}handle  点击事件或者移动事件的返回值
  * @param {Number}method   Cesium.ScreenSpaceEventType.LEFT_CLICK鼠事件标类型
  * @return:
- * @author: wangchaoxu
+ * @author: zulezhe
  */
 function removeHandle(handle, method) {
   handle.removeInputAction(method);
